@@ -1,16 +1,24 @@
-# Imports
 import os
 from flask import jsonify
 from flask_restful import Api
 from server.config import app, db
+from server.models import User
 from server.routes import register_routes
 
 # Initialize Flask-RESTful API and register routes
 api = Api(app)
 register_routes(api)
 
-# Serve React frontend
+# Serve React frontend or landing page
 @app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def index(path):
+    return jsonify({
+        "message": "Welcome to SpendWise API",
+        "endpoints": {
+            "health": "/api/health"
+        }
+    }), 200
 
 # Health check endpoint
 @app.route('/api/health')

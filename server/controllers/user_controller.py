@@ -1,4 +1,3 @@
-# server/controllers/user_controller.py
 from server.models import db, User
 
 def get_all_users():
@@ -12,7 +11,6 @@ def get_user_by_id(user_id):
     return user.serialize(), 200
 
 def create_user(data):
-    # Validate required fields
     required_fields = ['username', 'email', 'password']
     for field in required_fields:
         if not data.get(field):
@@ -28,7 +26,7 @@ def create_user(data):
         email=data.get('email'),
         full_name=data.get('full_name'),
         phone_number=data.get('phone_number'),
-        role=data.get('role', 'user')  # Default to 'user' if not provided
+        role=data.get('role', 'user')
     )
     new_user.set_password(data.get('password'))
     db.session.add(new_user)
@@ -40,11 +38,10 @@ def update_user(user_id, data):
     if not user:
         return {"error": "User not found"}, 404
 
-    # Whitelist allowed fields for update
     allowed_fields = {'username', 'email', 'full_name', 'phone_number', 'password'}
     for key, value in data.items():
         if key not in allowed_fields:
-            continue  # Skip any fields not permitted for update
+            continue
         if key == 'password':
             user.set_password(value)
         else:

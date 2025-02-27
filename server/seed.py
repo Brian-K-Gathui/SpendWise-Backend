@@ -1,6 +1,6 @@
 from faker import Faker
 from server.config import app, db
-from server.models import User
+from server.models import User  # Import the single User model
 
 fake = Faker()
 
