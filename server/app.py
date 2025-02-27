@@ -1,23 +1,23 @@
-#!/usr/bin/env python3
+# Imports
+import os
+from flask import jsonify
+from flask_restful import Api
+from server.config import app, db
+from server.routes import register_routes
 
-# Standard library imports
+# Initialize Flask-RESTful API and register routes
+api = Api(app)
+register_routes(api)
 
-# Remote library imports
-from flask import request
-from flask_restful import Resource
+# Serve React frontend
+@app.route("/", defaults={"path": ""})
 
-# Local imports
-from config import app, db, api
-# Add your model imports
+# Health check endpoint
+@app.route('/api/health')
+def health_check():
+    return jsonify({"message": "API is running!"}), 200
 
-
-# Views go here!
-
-@app.route('/')
-def index():
-    return '<h1>Project Server</h1>'
-
-
-if __name__ == '__main__':
-    app.run(port=5555, debug=True)
-
+# Run the Flask app for development
+if __name__ == "__main__":
+    is_local = os.getenv("FLASK_ENV", "development") == "development"
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=is_local)
