@@ -2,7 +2,7 @@ import os
 from flask import jsonify
 from flask_restful import Api
 from server.config import app, db
-from server.models import User
+from server.models import User, Transaction, Wallet, Category, WalletCollaborator, Budget  # Importing all models
 from server.routes import register_routes
 
 # Initialize Flask-RESTful API and register routes
