@@ -1,31 +1,25 @@
-# Standard library imports
-
-# Remote library imports
+import os
 from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
-from flask_restful import Api
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import MetaData
 
-# Local imports
+# Initialize Flask app with instance folder inside 'server'
+app = Flask(__name__, instance_relative_config=True, instance_path=os.path.join(os.path.dirname(__file__), 'instance'))
 
-# Instantiate app, set attributes
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+# Configure SQLite database for local development
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///spendwise.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'supersecretkey')
+
+# Ensure JSON responses are formatted nicely
 app.json.compact = False
 
-# Define metadata, instantiate db
-metadata = MetaData(naming_convention={
-    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-})
-db = SQLAlchemy(metadata=metadata)
+# Initialize the database and migration tool
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-db.init_app(app)
 
-# Instantiate REST API
-api = Api(app)
+# Enable CORS for API endpoints (allowing all origins for development)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Instantiate CORS
-CORS(app)
+print("✅ Flask application configured successfully for development with spendwise.db")
