@@ -3,6 +3,11 @@
 # Live Demo
 [https://spendwise-three.vercel.app/](https://spendwise-three.vercel.app/)
 
+# Endpoints
+- [Get Users] -> https://spendwise-three.vercel.app/users
+              -> https://spendwise-three.vercel.app/users/:id
+
+
 ## Problem Statement
 
 Managing personal and shared expenses efficiently is a common challenge. Many individuals struggle to track their spending, set budgets, and collaborate with others on shared financial responsibilities. Popular expense tracker applications often lack intuitive collaboration features, making it difficult for families, roommates, or business partners to manage joint expenses.
