@@ -1,5 +1,8 @@
 # (Backend) SpendWise - Personal & Collaborative Expense Tracker 💵💰💳
 
+# Live Demo
+[https://spendwise-three.vercel.app/](https://spendwise-three.vercel.app/)
+
 ## Problem Statement
 
 Managing personal and shared expenses efficiently is a common challenge. Many individuals struggle to track their spending, set budgets, and collaborate with others on shared financial responsibilities. Popular expense tracker applications often lack intuitive collaboration features, making it difficult for families, roommates, or business partners to manage joint expenses.
@@ -81,19 +84,19 @@ SpendWise aims to solve these problems by offering a comprehensive and user-frie
 
 ## Expected Impact
 
-- **Improved Financial Awareness**  
+- **Improved Financial Awareness**
   Users gain better insights into their financial habits and cash flow.
 
-- **Seamless Transaction Tracking**  
+- **Seamless Transaction Tracking**
   Categorized income and expense tracking makes financial management effortless.
 
-- **Enhanced Collaboration**  
+- **Enhanced Collaboration**
   Shared wallets make it easier for families, friends, or business partners to manage joint finances transparently.
 
-- **Budget Optimization**  
+- **Budget Optimization**
   Smart budgeting tools help users control spending and achieve financial goals.
 
-- **User-Friendly Experience**  
+- **User-Friendly Experience**
   A responsive, intuitive UI ensures accessibility across all devices.
 
 SpendWise is designed to be a powerful yet simple tool to help individuals and groups take full control of their financial management.
