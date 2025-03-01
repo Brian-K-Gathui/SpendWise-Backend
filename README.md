@@ -4,6 +4,7 @@
 [https://spendwise-three.vercel.app/](https://spendwise-three.vercel.app/)
 
 # Endpoints
+- [Base Url] -> https://spendwise-three.vercel.app/
 - [Get Users] -> https://spendwise-three.vercel.app/users
               -> https://spendwise-three.vercel.app/users/:id
 
