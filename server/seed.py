@@ -18,7 +18,7 @@ def seed_users():
             username=f"admin{i}",
             email=f"admin{i}@example.com",
             full_name=fake.name(),
-            phone_number=fake.phone_number(),
+            phone_number=fake.phone_number()[:20],
             is_verified=True,
             mfa_enabled=False,
             role="admin"
@@ -34,7 +34,7 @@ def seed_users():
             username=f"user{i}",
             email=f"user{i}@example.com",
             full_name=fake.name(),
-            phone_number=fake.phone_number(),
+            phone_number=fake.phone_number()[:20],
             is_verified=True,
             mfa_enabled=False,
             role="user"
