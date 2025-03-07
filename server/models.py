@@ -2,60 +2,54 @@ from sqlalchemy_serializer import SerializerMixin
 from sqlalchemy.orm import validates
 from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.sql import func
-from server.config import db  # Using the initialized SQLAlchemy instance
+from config import db  # Using the initialized SQLAlchemy instance
+from datetime import datetime
 
 # ====================================
 # User Model
 # ====================================
 """
-    User Model: Represents both regular users and admins in SpendWise.
+    User Model: Represents users in SpendWise with Clerk authentication.
 
     Attributes:
-    - id: Unique identifier for the user.
-    - username: User's chosen username.
+    - id: Clerk user ID (string).
     - email: Unique email address for verification and notifications.
-    - password_hash: Securely stored hashed password.
     - full_name: User's full name.
-    - phone_number: Optional phone number for additional verification.
-    - is_verified: Indicates if the user's email has been verified.
-    - mfa_enabled: Tracks if multi-factor authentication is enabled.
-    - role: User role; for example, 'user' or 'admin'.
     - created_at: Timestamp of account creation.
     - updated_at: Timestamp of the last update.
+    - is_active: Indicates if the user account is active.
 """
 class User(db.Model, SerializerMixin):
-
     __tablename__ = 'users'
     serialize_rules = ('-password_hash',)
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(120), nullable=False, unique=True)
-    password_hash = db.Column(db.String(256), nullable=False)
-    full_name = db.Column(db.String(255))
-    phone_number = db.Column(db.String(20))
-    is_verified = db.Column(db.Boolean, default=False)
-    mfa_enabled = db.Column(db.Boolean, default=False)
-    role = db.Column(db.String(20), nullable=False)  # 'admin' or 'user'
-    created_at = db.Column(db.DateTime, server_default=func.now())
-    updated_at = db.Column(db.DateTime, onupdate=func.now())
+    id = db.Column(db.String(255), primary_key=True)  # This will store the Clerk user ID
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    full_name = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+    # Relationships
+    wallets = db.relationship('Wallet', backref='owner', lazy=True, foreign_keys='Wallet.owner_id')
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+    def __init__(self, id, email, full_name=None):
+        self.id = id
+        self.email = email
+        self.full_name = full_name
 
-    @validates('username', 'email')
-    def validate_not_empty(self, key, value):
-        if not value or not value.strip():
-            raise ValueError(f"{key.capitalize()} cannot be empty")
-        if key == 'email' and '@' not in value:
-            raise ValueError("Invalid email format")
-        return value
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'email': self.email,
+            'full_name': self.full_name,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_active': self.is_active
+        }
 
     def __repr__(self):
-        return f'<User {self.id}: {self.username}>'
+        return f'<User {self.id}: {self.email}>'
 
 # ====================================
 # Wallet Model
@@ -76,19 +70,18 @@ class User(db.Model, SerializerMixin):
 """
 class Wallet(db.Model, SerializerMixin):
     __tablename__ = 'wallets'
-    
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text)
     currency = db.Column(db.String(10), default='KES')
     balance = db.Column(db.Numeric(10, 2), nullable=False, default=0)
     type = db.Column(db.String(50))  # 'personal' or 'shared'
-    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    owner_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     created_at = db.Column(db.DateTime, server_default=func.now())
     updated_at = db.Column(db.DateTime, onupdate=func.now())
-    
+
     # Relationships
-    owner = db.relationship('User', backref='wallets', lazy=True)
     transactions = db.relationship('Transaction', backref='wallet', lazy=True)
     budgets = db.relationship('Budget', backref='wallet', lazy=True)
     collaborators = db.relationship('WalletCollaborator', backref='wallet', lazy=True)
@@ -127,7 +120,7 @@ class Transaction(db.Model, SerializerMixin):
     date = db.Column(db.DateTime, nullable=False)
     is_recurring = db.Column(db.Boolean, default=False)
     recurring_interval = db.Column(db.String(50))
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_by = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     created_at = db.Column(db.DateTime, server_default=func.now())
     updated_at = db.Column(db.DateTime, onupdate=func.now())
 
@@ -156,7 +149,7 @@ class Category(db.Model, SerializerMixin):
     icon = db.Column(db.String(100))
     color = db.Column(db.String(20))
     is_default = db.Column(db.Boolean, default=False)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.Column(db.String(255), db.ForeignKey('users.id'))  # Changed to String to match User.id
     created_at = db.Column(db.DateTime, server_default=func.now())
     updated_at = db.Column(db.DateTime, onupdate=func.now())
 
@@ -178,7 +171,7 @@ class WalletCollaborator(db.Model, SerializerMixin):
     __tablename__ = 'wallet_collaborators'
     id = db.Column(db.Integer, primary_key=True)
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     permission_level = db.Column(db.String(20))  # owner, editor, viewer
     created_at = db.Column(db.DateTime, server_default=func.now())
     updated_at = db.Column(db.DateTime, onupdate=func.now())
@@ -204,7 +197,7 @@ class WalletCollaborator(db.Model, SerializerMixin):
 class Budget(db.Model, SerializerMixin):
     __tablename__ = 'budgets'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=False)
     amount = db.Column(db.Numeric, nullable=False)
@@ -234,7 +227,7 @@ class Budget(db.Model, SerializerMixin):
 class AIAdvisorProfile(db.Model, SerializerMixin):
     __tablename__ = 'ai_advisor_profiles'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     risk_tolerance = db.Column(db.Float, nullable=False)
     financial_goals = db.Column(db.JSON)
     investment_preferences = db.Column(db.JSON)
@@ -264,7 +257,7 @@ class AIAdvisorProfile(db.Model, SerializerMixin):
 class VoiceTransaction(db.Model, SerializerMixin):
     __tablename__ = 'voice_transactions'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     audio_url = db.Column(db.String(255))
     transcription = db.Column(db.Text)
     intent_analysis = db.Column(db.JSON)
@@ -295,7 +288,7 @@ class VoiceTransaction(db.Model, SerializerMixin):
 class SpendingPattern(db.Model, SerializerMixin):
     __tablename__ = 'spending_patterns'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     pattern_type = db.Column(db.String(50))
     pattern_data = db.Column(db.JSON)
     significance_score = db.Column(db.Float)
@@ -324,7 +317,7 @@ class SpendingPattern(db.Model, SerializerMixin):
 class FinancialBenchmark(db.Model, SerializerMixin):
     __tablename__ = 'financial_benchmarks'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     peer_group_params = db.Column(db.JSON)
     comparison_metrics = db.Column(db.JSON)
     insights_generated = db.Column(db.JSON)
@@ -352,7 +345,7 @@ class FinancialBenchmark(db.Model, SerializerMixin):
 class XRVisualization(db.Model, SerializerMixin):
     __tablename__ = 'xr_visualizations'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     visualization_type = db.Column(db.String(50))
     scene_data = db.Column(db.JSON)
     interaction_metrics = db.Column(db.JSON)
@@ -381,7 +374,7 @@ class XRVisualization(db.Model, SerializerMixin):
 class CryptoWallet(db.Model, SerializerMixin):
     __tablename__ = 'crypto_wallets'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     wallet_address = db.Column(db.String(255))
     blockchain_type = db.Column(db.String(50))
     balance_snapshot = db.Column(db.JSON)
@@ -413,7 +406,7 @@ class CryptoWallet(db.Model, SerializerMixin):
 class FinancialForecast(db.Model, SerializerMixin):
     __tablename__ = 'financial_forecasts'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=False)
     forecast_type = db.Column(db.String(50))
     time_range = db.Column(db.String(50))
@@ -473,7 +466,7 @@ class WalletInvitation(db.Model, SerializerMixin):
     __tablename__ = 'wallet_invitations'
     id = db.Column(db.Integer, primary_key=True)
     wallet_id = db.Column(db.Integer, db.ForeignKey('wallets.id'), nullable=False)
-    invited_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    invited_by = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     invited_email = db.Column(db.String(120), nullable=False)
     permission_level = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50))  # pending, accepted, rejected
@@ -529,7 +522,7 @@ class SmartBudget(db.Model, SerializerMixin):
 class Notification(db.Model, SerializerMixin):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     type = db.Column(db.String(50))
     title = db.Column(db.String(255), nullable=False)
     message = db.Column(db.Text, nullable=False)
@@ -559,7 +552,7 @@ class Notification(db.Model, SerializerMixin):
 class ReceiptScan(db.Model, SerializerMixin):
     __tablename__ = 'receipt_scans'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.String(255), db.ForeignKey('users.id'), nullable=False)  # Changed to String to match User.id
     image_url = db.Column(db.String(255))
     ocr_text = db.Column(db.Text)
     confidence_score = db.Column(db.Float)

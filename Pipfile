@@ -4,18 +4,28 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-ipdb = "0.13.9"
+sqlalchemy-serializer = "*"
+psycopg2-binary = "*"
+flask-bcrypt = "*"
+flask-jwt-extended = "*"
+faker = "*"
+faker-commerce = "*"
+geoalchemy2 = "*"
+shapely = "*"
+requests = "*"
+resend = "*"
+sqlalchemy = "==2"
 flask = "*"
+flask-restful = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
-sqlalchemy-serializer = "*"
-flask-restful = "*"
 flask-cors = "*"
-faker = "*"
-sqlalchemy = "*"
-werkzeug = "*"
-psycopg2-binary = "*"
-psycopg2 = "*"
+python-dotenv = "*"
+pyjwt = "*"
+supabase = "*"
+flask-limiter = "*"
+
+[dev-packages]
 
 [requires]
-python_full_version = "3.8.13"
+python_version = "3.12.9"
