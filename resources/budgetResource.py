@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class BudgetResource(Resource):
     def get(self, budget_id=None):
         try:
-            # Get the Clerk user ID from the JWT token
+            #  Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
@@ -23,7 +23,7 @@ class BudgetResource(Resource):
 
                 return budget.to_dict()
 
-            # Otherwise, return all budgets for the user with optional filtering
+            # O return all budgets for the user with optional filtering
             query = Budget.query.filter_by(user_id=user_id)
 
             # Apply filters if provided
@@ -66,7 +66,7 @@ class BudgetResource(Resource):
             parser.add_argument('end_date', type=str, required=False)
             args = parser.parse_args()
 
-            # Get the Clerk user ID from the JWT token
+            # Get Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
@@ -76,12 +76,12 @@ class BudgetResource(Resource):
             if not user:
                 return {"error": "User not found"}, 404
 
-            # Check if wallet exists and belongs to user
+            # if wallet exists and belongs to user
             wallet = Wallet.query.filter_by(id=args['wallet_id'], user_id=user_id).first()
             if not wallet:
                 return {"error": "Wallet not found or access denied"}, 404
 
-            # Check if category exists
+            # if category exists
             category = Category.query.get(args['category_id'])
             if not category:
                 return {"error": "Category not found"}, 404
@@ -99,7 +99,7 @@ class BudgetResource(Resource):
                 except ValueError:
                     return {"error": "Invalid end date format. Use ISO format (YYYY-MM-DDTHH:MM:SS)"}, 400
 
-            # Create new budget
+            # new budget
             new_budget = Budget(
                 user_id=user_id,
                 wallet_id=args['wallet_id'],
@@ -129,7 +129,7 @@ class BudgetResource(Resource):
 
     def put(self, budget_id):
         try:
-            # Get the Clerk user ID from the JWT token
+            # Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
@@ -149,7 +149,7 @@ class BudgetResource(Resource):
             parser.add_argument('end_date', type=str, required=False)
             args = parser.parse_args()
 
-            # Check if wallet exists and belongs to user if wallet_id is being updated
+            # if wallet exists and belongs to user if wallet_id is being updated
             if args.get('wallet_id'):
                 wallet = Wallet.query.filter_by(id=args['wallet_id'], user_id=user_id).first()
                 if not wallet:
@@ -200,7 +200,7 @@ class BudgetResource(Resource):
 
     def delete(self, budget_id):
         try:
-            # Get the Clerk user ID from the JWT token
+            #  Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400

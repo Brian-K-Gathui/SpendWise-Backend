@@ -13,12 +13,10 @@ class CategoryResource(Resource):
 
     def get(self, category_id=None):
         try:
-            # Get the Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
 
-            # If category_id is provided, get that specific category
             if category_id:
                 category = Category.query.get(category_id)
                 if not category:
@@ -26,7 +24,7 @@ class CategoryResource(Resource):
 
                 return category.to_dict()
 
-            # Otherwise, return all categories
+            #  return all categories
             categories = Category.query.all()
             return [category.to_dict() for category in categories]
 
@@ -49,12 +47,12 @@ class CategoryResource(Resource):
             parser.add_argument('color', type=str, required=False)
             args = parser.parse_args()
 
-            # Get the Clerk user ID from the JWT token
+            #Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
 
-            # Check if user exists in local database
+            #  if user exists in local database
             user = User.query.get(user_id)
 
             # If not in local database, check Supabase
@@ -65,7 +63,7 @@ class CategoryResource(Resource):
                     email = g.user.get('email', '')
                     self.supabase_service.create_or_update_user(user_id, email, {})
 
-                    # Also create in local database
+                    #  create in local database
                     user = User(
                         id=user_id,
                         email=email

@@ -33,7 +33,7 @@ class UserData(db.Model):
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
 
-    id = Column(String(255), primary_key=True)  # This will store the Clerk user ID
+    id = Column(String(255), primary_key=True)  #  store the Clerk user ID
     email = Column(String(255), unique=True, nullable=False)
     full_name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

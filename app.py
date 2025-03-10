@@ -45,13 +45,18 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 }
 
 # Enable CORS - Updated to fix preflight issues
+# Production-ready CORS configuration
 CORS(app, resources={
     r"/*": {
-        "origins": ["http://localhost:5173"],
+        "origins": [
+            "http://localhost:5173",  # Local development
+            "https://spend-wise-frontend-coral.vercel.app",  # Production frontend
+
+        ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": True,
-        "max_age": 86400  # Cache preflight response for 24 hours
+        "max_age": 86400
     }
 })
 
@@ -64,22 +69,22 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 app.json_encoder = CustomJSONEncoder
 
-# Setup Flask-RESTful with custom JSON encoder
+# Flask-RESTful with custom JSON encoder
 api = Api(app)
-# Apply the custom encoder to Flask-RESTful
+# custom encoder to Flask-RESTful
 app.config['RESTFUL_JSON'] = {'cls': CustomJSONEncoder}
 
-# Create Migrate object
+#  Migrate object
 migrate = Migrate(app, db)
 
 # Initialize the database
 db.init_app(app)
 
-# Setup rate limiting with exemptions for OPTIONS requests
+# rate limiting with exemptions for OPTIONS requests
 def rate_limit_key_func():
     # Skip rate limiting for OPTIONS requests
     if request.method == 'OPTIONS':
-        return None  # Return None to skip rate limiting
+        return None
     return get_remote_address()
 
 limiter = Limiter(
@@ -110,7 +115,7 @@ def verify_clerk_token(f):
         token = auth_header.split(' ')[1]
         try:
             # Verify the token signature if you have the Clerk public key
-            # For simplicity, we're just decoding without verification here
+            #simplicity, we're just decoding without verification here
             # In production, you should verify the token signature
             decoded = jwt.decode(token, options={"verify_signature": False})
             g.user = decoded
