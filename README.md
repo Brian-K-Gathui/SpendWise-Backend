@@ -11,7 +11,7 @@
 
 ## 🌐 Live Demo
 
-[https://spendwise-three.vercel.app/](https://spendwise-three.vercel.app/)
+[https://spendwise-backend-production.vercel.app](https://spendwise-backend-production.vercel.app/)
 
 ## 📋 Table of Contents
 
@@ -43,7 +43,7 @@ SpendWise aims to solve these problems by offering a comprehensive and user-frie
 ## 🔌 API Endpoints
 
 ### Base URL
-- Production: `https://spendwise-three.vercel.app/`
+- Production: `https://spendwise-backend-production.vercel.app/`
 
 ### User Management
 - `GET /api/users/:id` - Get user details
@@ -281,8 +281,8 @@ SpendWise uses a token-based authentication system:
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/spendwise-backend.git
-   cd spendwise-backend
+   git clone https://github.com/Brian-K-Gathui/SpendWise-Backend.git
+   cd SpendWise-Backend
    ```
 
 ### **Install dependencies**
