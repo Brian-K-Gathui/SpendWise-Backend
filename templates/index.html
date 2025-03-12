@@ -1,0 +1,1020 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SpendWise API - Documentation</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --primary: #6366f1;
+                --primary-dark: #4f46e5;
+                --secondary: #10b981;
+                --dark: #1f2937;
+                --light: #f9fafb;
+                --gray: #6b7280;
+                --gray-light: #e5e7eb;
+                --danger: #ef4444;
+                --warning: #f59e0b;
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Inter", sans-serif;
+                line-height: 1.6;
+                color: var(--dark);
+                background-color: var(--light);
+            }
+
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 0 20px;
+            }
+
+            header {
+                background-color: white;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                position: sticky;
+                top: 0;
+                z-index: 100;
+            }
+
+            .header-content {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 20px 0;
+            }
+
+            .logo {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                font-weight: 700;
+                font-size: 1.5rem;
+                color: var(--primary);
+            }
+
+            .logo img {
+                height: 40px;
+            }
+
+            .nav-links {
+                display: flex;
+                gap: 30px;
+            }
+
+            .nav-links a {
+                text-decoration: none;
+                color: var(--dark);
+                font-weight: 500;
+                transition: color 0.3s;
+            }
+
+            .nav-links a:hover {
+                color: var(--primary);
+            }
+
+            .hero {
+                background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--primary-dark) 100%
+                );
+                color: white;
+                padding: 80px 0;
+                text-align: center;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+                margin-bottom: 20px;
+            }
+
+            .hero p {
+                font-size: 1.2rem;
+                max-width: 700px;
+                margin: 0 auto 30px;
+                opacity: 0.9;
+            }
+
+            .btn {
+                display: inline-block;
+                padding: 12px 24px;
+                background-color: var(--secondary);
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 500;
+                transition: background-color 0.3s;
+            }
+
+            .btn:hover {
+                background-color: #0ea271;
+            }
+
+            .docs-section {
+                padding: 80px 0;
+            }
+
+            .section-title {
+                text-align: center;
+                margin-bottom: 60px;
+            }
+
+            .section-title h2 {
+                font-size: 2rem;
+                margin-bottom: 15px;
+                color: var(--primary);
+            }
+
+            .section-title p {
+                color: var(--gray);
+                max-width: 700px;
+                margin: 0 auto;
+            }
+
+            .endpoints {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+                gap: 30px;
+                margin-top: 40px;
+            }
+
+            .endpoint-category {
+                background-color: white;
+                border-radius: 10px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                overflow: hidden;
+                transition:
+                    transform 0.3s,
+                    box-shadow 0.3s;
+            }
+
+            .endpoint-category:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+
+            .endpoint-header {
+                background-color: var(--primary);
+                color: white;
+                padding: 20px;
+            }
+
+            .endpoint-header h3 {
+                font-size: 1.3rem;
+                margin-bottom: 5px;
+            }
+
+            .endpoint-content {
+                padding: 20px;
+            }
+
+            .endpoint-list {
+                list-style: none;
+            }
+
+            .endpoint-item {
+                margin-bottom: 15px;
+                padding-bottom: 15px;
+                border-bottom: 1px solid var(--gray-light);
+            }
+
+            .endpoint-item:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+            .endpoint-method {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                margin-right: 10px;
+            }
+
+            .method-get {
+                background-color: #93c5fd;
+                color: #1e40af;
+            }
+
+            .method-post {
+                background-color: #a7f3d0;
+                color: #065f46;
+            }
+
+            .method-put {
+                background-color: #fde68a;
+                color: #92400e;
+            }
+
+            .method-delete {
+                background-color: #fca5a5;
+                color: #991b1b;
+            }
+
+            .endpoint-path {
+                font-family: monospace;
+                font-size: 0.9rem;
+                margin-bottom: 5px;
+            }
+
+            .endpoint-description {
+                color: var(--gray);
+                font-size: 0.9rem;
+            }
+
+            .features {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 30px;
+            }
+
+            .feature-card {
+                background-color: white;
+                border-radius: 10px;
+                padding: 30px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                text-align: center;
+            }
+
+            .feature-icon {
+                width: 60px;
+                height: 60px;
+                background-color: var(--primary);
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 20px;
+                font-size: 1.5rem;
+            }
+
+            .feature-card h3 {
+                margin-bottom: 15px;
+                color: var(--dark);
+            }
+
+            .feature-card p {
+                color: var(--gray);
+                font-size: 0.95rem;
+            }
+
+            .setup-steps {
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            .step {
+                display: flex;
+                margin-bottom: 40px;
+            }
+
+            .step:last-child {
+                margin-bottom: 0;
+            }
+
+            .step-number {
+                flex-shrink: 0;
+                width: 40px;
+                height: 40px;
+                background-color: var(--primary);
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                margin-right: 20px;
+            }
+
+            .step-content h3 {
+                margin-bottom: 10px;
+                color: var(--dark);
+            }
+
+            .step-content p {
+                color: var(--gray);
+                margin-bottom: 15px;
+            }
+
+            .code-block {
+                background-color: var(--dark);
+                color: white;
+                padding: 15px;
+                border-radius: 6px;
+                font-family: monospace;
+                overflow-x: auto;
+                margin-top: 15px;
+            }
+
+            footer {
+                background-color: var(--dark);
+                color: white;
+                padding: 60px 0 30px;
+            }
+
+            .footer-content {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 40px;
+                margin-bottom: 40px;
+            }
+
+            .footer-column h3 {
+                font-size: 1.2rem;
+                margin-bottom: 20px;
+                color: white;
+            }
+
+            .footer-links {
+                list-style: none;
+            }
+
+            .footer-links li {
+                margin-bottom: 10px;
+            }
+
+            .footer-links a {
+                color: var(--gray-light);
+                text-decoration: none;
+                transition: color 0.3s;
+            }
+
+            .footer-links a:hover {
+                color: white;
+            }
+
+            .copyright {
+                text-align: center;
+                padding-top: 30px;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                color: var(--gray-light);
+                font-size: 0.9rem;
+            }
+
+            @media (max-width: 768px) {
+                .header-content {
+                    flex-direction: column;
+                    gap: 20px;
+                }
+
+                .nav-links {
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 15px;
+                }
+
+                .hero {
+                    padding: 60px 0;
+                }
+
+                .hero h1 {
+                    font-size: 2rem;
+                }
+
+                .endpoints {
+                    grid-template-columns: 1fr;
+                }
+
+                .step {
+                    flex-direction: column;
+                }
+
+                .step-number {
+                    margin-bottom: 15px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div class="logo">
+                        <span>💵</span>
+                        <span>SpendWise API</span>
+                    </div>
+                    <nav class="nav-links">
+                        <a href="#endpoints">API Endpoints</a>
+                        <a href="#features">Features</a>
+                        <a href="#setup">Setup</a>
+                        <a
+                            href="https://github.com/yourusername/spendwise-backend"
+                            target="_blank"
+                            >GitHub</a
+                        >
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <section class="hero">
+            <div class="container">
+                <h1>SpendWise Backend API</h1>
+                <p>
+                    A comprehensive RESTful API for personal and collaborative
+                    expense tracking, budget management, and financial
+                    reporting.
+                </p>
+                <a
+                    href="https://github.com/Brian-K-Gathui/SpendWise-Backend"
+                    class="btn"
+                    >View on GitHub</a
+                >
+            </div>
+        </section>
+
+        <section id="endpoints" class="docs-section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>API Endpoints</h2>
+                    <p>
+                        Explore the available endpoints for managing wallets,
+                        transactions, budgets, and more.
+                    </p>
+                </div>
+
+                <div class="endpoints">
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>User Management</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/users/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get user details
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">/api/users</div>
+                                    <div class="endpoint-description">
+                                        Create or update user
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>Wallet Management</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/wallets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get all wallets for a user
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get a specific wallet
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/wallets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Create a new wallet
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-put"
+                                        >PUT</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Update a wallet
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-delete"
+                                        >DELETE</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Delete a wallet
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>Transaction Management</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/transactions
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get all transactions (with optional
+                                        filtering)
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/transactions/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get a specific transaction
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/transactions
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Create a new transaction
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-put"
+                                        >PUT</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/transactions/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Update a transaction
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-delete"
+                                        >DELETE</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/transactions/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Delete a transaction
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>Budget Management</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/budgets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get all budgets (with optional
+                                        filtering)
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/budgets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get a specific budget
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/budgets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Create a new budget
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-put"
+                                        >PUT</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/budgets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Update a budget
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-delete"
+                                        >DELETE</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/budgets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Delete a budget
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>Category Management</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/categories
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get all categories
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/categories/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get a specific category
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/categories
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Create a new category
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-category">
+                        <div class="endpoint-header">
+                            <h3>Shared Wallets</h3>
+                        </div>
+                        <div class="endpoint-content">
+                            <ul class="endpoint-list">
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/shared-wallets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get all shared wallets
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-get"
+                                        >GET</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/shared-wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Get a specific shared wallet
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-post"
+                                        >POST</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/shared-wallets
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Share a wallet with another user
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-put"
+                                        >PUT</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/shared-wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Update sharing permissions
+                                    </div>
+                                </li>
+                                <li class="endpoint-item">
+                                    <span class="endpoint-method method-delete"
+                                        >DELETE</span
+                                    >
+                                    <div class="endpoint-path">
+                                        /api/shared-wallets/:id
+                                    </div>
+                                    <div class="endpoint-description">
+                                        Remove sharing access
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section
+            id="features"
+            class="docs-section"
+            style="background-color: #f3f4f6"
+        >
+            <div class="container">
+                <div class="section-title">
+                    <h2>Key Features</h2>
+                    <p>
+                        Discover the powerful features that make SpendWise a
+                        comprehensive financial management solution.
+                    </p>
+                </div>
+
+                <div class="features">
+                    <div class="feature-card">
+                        <div class="feature-icon">💰</div>
+                        <h3>Multi-Wallet Support</h3>
+                        <p>
+                            Create and manage multiple wallets for different
+                            purposes with support for various currencies.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔄</div>
+                        <h3>Transaction Tracking</h3>
+                        <p>
+                            Record and categorize income and expenses with
+                            detailed filtering and search capabilities.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Budget Management</h3>
+                        <p>
+                            Set and track budgets for specific categories with
+                            period-based limits and notifications.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔔</div>
+                        <h3>Smart Notifications</h3>
+                        <p>
+                            Receive alerts for budget limits, shared wallet
+                            invitations, and important updates.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">🔁</div>
+                        <h3>Recurring Transactions</h3>
+                        <p>
+                            Set up automatic transactions with various
+                            frequencies for regular income and expenses.
+                        </p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">👥</div>
+                        <h3>Collaboration</h3>
+                        <p>
+                            Share wallets with others and manage permissions for
+                            collaborative financial tracking.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="setup" class="docs-section">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Getting Started</h2>
+                    <p>
+                        Follow these steps to set up the SpendWise backend on
+                        your local machine.
+                    </p>
+                </div>
+
+                <div class="setup-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h3>Clone the Repository</h3>
+                            <p>
+                                Get the code from GitHub to your local machine.
+                            </p>
+                            <div class="code-block">
+                                git clone
+                                https://github.com/Brian-K-Gathui/SpendWise-Backend.git<br />
+                                cd SpendWise-Backend
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h3>Install Dependencies</h3>
+                            <p>Install all required packages using Pipenv.</p>
+                            <div class="code-block">pipenv install</div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h3>Set Up Environment Variables</h3>
+                            <p>
+                                Create a .env file with the necessary
+                                configuration.
+                            </p>
+                            <div class="code-block">
+                                # Flask configuration<br />
+                                FLASK_APP=app.py<br />
+                                FLASK_ENV=development<br />
+                                FLASK_DEBUG=True<br />
+                                PORT=5000<br />
+                                SECRET_KEY=your_secret_key<br /><br />
+                                # Database configuration<br />
+                                DATABASE_URL=postgresql://username:password@localhost:5432/spendwise<br /><br />
+                                # Supabase configuration<br />
+                                SUPABASE_URL=your_supabase_url<br />
+                                SUPABASE_KEY=your_supabase_key
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h3>Set Up the Database</h3>
+                            <p>Create the database and run migrations.</p>
+                            <div class="code-block">
+                                # Create a PostgreSQL database<br />
+                                createdb spendwise<br /><br />
+                                # Run migrations<br />
+                                pipenv run flask db upgrade<br /><br />
+                                # Seed default categories<br />
+                                pipenv run python scripts/seed_categories.py
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h3>Run the Application</h3>
+                            <p>Start the Flask development server.</p>
+                            <div class="code-block">pipenv run flask run</div>
+                            <p>
+                                The API will be available at
+                                <code>http://localhost:5000</code>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-column">
+                        <h3>SpendWise API</h3>
+                        <ul class="footer-links">
+                            <li><a href="#endpoints">API Endpoints</a></li>
+                            <li><a href="#features">Features</a></li>
+                            <li><a href="#setup">Setup Guide</a></li>
+                            <li>
+                                <a
+                                    href="https://github.com/yourusername/spendwise-backend"
+                                    >GitHub Repository</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Resources</h3>
+                        <ul class="footer-links">
+                            <li>
+                                <a href="https://flask.palletsprojects.com/"
+                                    >Flask Documentation</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://www.sqlalchemy.org/"
+                                    >SQLAlchemy Documentation</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://supabase.com/docs"
+                                    >Supabase Documentation</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://vercel.com/docs"
+                                    >Vercel Documentation</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h3>Contact</h3>
+                        <ul class="footer-links">
+                            <li>
+                                <a href="mailto:your.email@example.com"
+                                    >Email</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://github.com/yourusername"
+                                    >GitHub</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://twitter.com/yourusername"
+                                    >Twitter</a
+                                >
+                            </li>
+                            <li>
+                                <a href="https://linkedin.com/in/yourusername"
+                                    >LinkedIn</a
+                                >
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="copyright">
+                    &copy; 2023 SpendWise. All rights reserved.
+                </div>
+            </div>
+        </footer>
+    </body>
+</html>

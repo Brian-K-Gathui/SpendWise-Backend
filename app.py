@@ -1,102 +1,195 @@
+from flask import Flask, jsonify, g, request, render_template
+from flask_restful import Api, Resource
+from flask_migrate import Migrate
+from dotenv import load_dotenv
+from flask_cors import CORS
 import os
-from flask import jsonify, g, request, Response
-from flask_restful import Api
-from config import app, db, CustomJSONEncoder
-from models import User,Wallet,Transaction,Category,WalletCollaborator,Budget,AIAdvisorProfile,VoiceTransaction,SpendingPattern,FinancialBenchmark,XRVisualization,CryptoWallet,FinancialForecast,WalletInvitation,SmartCategory,ReceiptScan,Notification # Importing all models
-from routes import register_routes
-import logging
+from datetime import datetime
 import json
+from models import db, User
+import logging
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from supabase import create_client
+from functools import wraps
+import jwt
+from resources.userResource import UserResource
+from resources.walletResource import WalletResource
+from resources.transactionResource import TransactionResource
+from resources.budgetResource import BudgetResource
+from resources.categoryResource import CategoryResource
+from resources.notificationResource import NotificationResource
+from resources.recurring_transaction_resource import RecurringTransactionResource, ProcessRecurringTransactionsResource
+from resources.report_resource import ReportResource
+from resources.shared_wallet_resource import SharedWalletResource
+from sqlalchemy import create_engine
+from sqlalchemy.pool import QueuePool
+from services.supabase_service import SupabaseService
 
 # Configure logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 logger = logging.getLogger(__name__)
 
-# Initialize Flask-RESTful API and register routes
+# Load environment variables
+load_dotenv()
+
+# Create Flask instance
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ECHO'] = True
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_size': 5,  # Start with 5 connections
+    'max_overflow': 10,  # Allow up to 10 more connections
+    'pool_timeout': 30,  # Timeout after 30 seconds
+    'pool_recycle': 1800,  # Recycle connections after 30 minutes
+    'pool_pre_ping': True,  # Check connection validity before using it
+}
+
+# Enable CORS - Updated to fix preflight issues
+# Production-ready CORS configuration
+CORS(app, resources={
+    r"/*": {
+        "origins": [
+            "http://localhost:5173",  # Local development
+            "https://spend-wise-frontend-coral.vercel.app",  # Production frontend
+        ],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True,
+        "max_age": 86400
+    }
+})
+
+# Custom JSON encoder for datetime objects
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
+
+app.json_encoder = CustomJSONEncoder
+
+# Flask-RESTful with custom JSON encoder
 api = Api(app)
-register_routes(api)
+# custom encoder to Flask-RESTful
+app.config['RESTFUL_JSON'] = {'cls': CustomJSONEncoder}
 
-# Serve React frontend or landing page
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def index(path):
-    return jsonify({
-        "message": "Welcome to SpendWise API",
-        "status": "online",
-        "version": "1.0.0",
-        "endpoints": {
-            "health": "/api/health",
-            "users": "/api/users",
-            "wallets": "/api/wallets",
-            "transactions": "/api/transactions",
-            "categories": "/api/categories",
-            "budgets": "/api/budgets",
-            "wallet_invitations": "/api/wallet-invitations"
-        }
-    }), 200
+#  Migrate object
+migrate = Migrate(app, db)
 
-# Health check endpoint
-@app.route('/api/health')
-def health_check():
+# Initialize the database
+db.init_app(app)
+
+# rate limiting with exemptions for OPTIONS requests
+def rate_limit_key_func():
+    # Skip rate limiting for OPTIONS requests
+    if request.method == 'OPTIONS':
+        return None
+    return get_remote_address()
+
+limiter = Limiter(
+    app=app,
+    key_func=rate_limit_key_func,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://",
+    strategy="fixed-window"
+)
+
+# Exempt OPTIONS requests from rate limiting
+@limiter.exempt
+@app.route('/', methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def options_handler(path=None):
+    return '', 200
+
+# Initialize Supabase service
+supabase_service = SupabaseService()
+
+def verify_clerk_token(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return {"error": "No token provided"}, 401
+
+        token = auth_header.split(' ')[1]
+        try:
+            # Verify the token signature if you have the Clerk public key
+            #simplicity, we're just decoding without verification here
+            # In production, you should verify the token signature
+            decoded = jwt.decode(token, options={"verify_signature": False})
+            g.user = decoded
+            return f(*args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            return {"error": "Token has expired"}, 401
+        except jwt.InvalidTokenError:
+            return {"error": "Invalid token"}, 401
+    return decorated_function
+
+# Apply the verify_clerk_token decorator to all routes
+@app.before_request
+def before_request():
+    # Skip authentication for OPTIONS requests (CORS preflight)
+    if request.method == 'OPTIONS':
+        return
+
+    # Skip authentication for the home route
+    if request.path == '/':
+        return
+
+    # Apply token verification
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return {"error": "No token provided"}, 401
+
+    token = auth_header.split(' ')[1]
     try:
-        # Test database connection
-        db.session.execute('SELECT 1')
-        db_status = "connected"
-    except Exception as e:
-        logger.error(f"Database connection error: {str(e)}")
-        db_status = "disconnected"
-
-    return jsonify({
-        "status": "healthy",
-        "database": db_status,
-        "environment": os.getenv("FLASK_ENV", "development")
-    }), 200
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        g.user = decoded
+    except jwt.ExpiredSignatureError:
+        return {"error": "Token has expired"}, 401
+    except jwt.InvalidTokenError:
+        return {"error": "Invalid token"}, 401
 
 @app.errorhandler(Exception)
 def handle_error(error):
     logger.error(f"An error occurred: {str(error)}")
     response_data = {"error": str(error), "message": "An internal server error occurred"}
-    return Response(json.dumps(response_data, cls=CustomJSONEncoder), status=500, mimetype="application/json")
+    return response_data, 500
+
+
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+# Add resources to the API
+api.add_resource(UserResource, '/api/users', '/api/users/<string:user_id>')
+api.add_resource(WalletResource, '/api/wallets', '/api/wallets/<int:wallet_id>')
+api.add_resource(TransactionResource, '/api/transactions', '/api/transactions/<int:transaction_id>')
+api.add_resource(BudgetResource, '/api/budgets', '/api/budgets/<int:budget_id>')
+api.add_resource(CategoryResource, '/api/categories', '/api/categories/<int:category_id>')
+api.add_resource(NotificationResource, '/api/notifications', '/api/notifications/<int:notification_id>')
+api.add_resource(RecurringTransactionResource, '/api/recurring-transactions', '/api/recurring-transactions/<int:recurring_transaction_id>')
+api.add_resource(ProcessRecurringTransactionsResource, '/api/recurring-transactions/process')
+api.add_resource(ReportResource, '/api/reports', '/api/reports/<int:report_id>')
+api.add_resource(SharedWalletResource, '/api/shared-wallets', '/api/shared-wallets/<int:shared_wallet_id>')
 
 @app.errorhandler(404)
 def not_found(error):
-    return jsonify({"error": "Not found", "message": "The requested resource does not exist"}), 404
+    return {"error": "Not found"}, 404
 
 @app.errorhandler(500)
 def internal_error(error):
-    return jsonify({"error": "Internal server error", "message": "An unexpected error occurred"}), 500
+    return {"error": "Internal server error"}, 500
 
-# Run the Flask app for development
+# Handle 429 Too Many Requests errors
+@app.errorhandler(429)
+def ratelimit_handler(error):
+    return {"error": "Rate limit exceeded. Please try again later."}, 429
+
 if __name__ == "__main__":
-    is_local = os.getenv("FLASK_ENV", "development") == "development"
-    # Create database tables if they don't exist
     with app.app_context():
         db.create_all()
-
-        # Create default categories if they don't exist
-        from models import Category
-        default_categories = [
-            {"name": "Food & Dining", "type": "expense", "icon": "utensils", "color": "#FF5733", "is_default": True},
-            {"name": "Transportation", "type": "expense", "icon": "car", "color": "#33A8FF", "is_default": True},
-            {"name": "Housing", "type": "expense", "icon": "home", "color": "#33FF57", "is_default": True},
-            {"name": "Entertainment", "type": "expense", "icon": "film", "color": "#D433FF", "is_default": True},
-            {"name": "Shopping", "type": "expense", "icon": "shopping-bag", "color": "#FF33A8", "is_default": True},
-            {"name": "Utilities", "type": "expense", "icon": "bolt", "color": "#FFD433", "is_default": True},
-            {"name": "Healthcare", "type": "expense", "icon": "medkit", "color": "#33FFC4", "is_default": True},
-            {"name": "Personal Care", "type": "expense", "icon": "spa", "color": "#FF8333", "is_default": True},
-            {"name": "Education", "type": "expense", "icon": "graduation-cap", "color": "#3357FF", "is_default": True},
-            {"name": "Gifts & Donations", "type": "expense", "icon": "gift", "color": "#FF33D4", "is_default": True},
-            {"name": "Salary", "type": "income", "icon": "money-bill", "color": "#33FF57", "is_default": True},
-            {"name": "Bonus", "type": "income", "icon": "award", "color": "#FFD433", "is_default": True},
-            {"name": "Investment", "type": "income", "icon": "chart-line", "color": "#33A8FF", "is_default": True},
-            {"name": "Freelance", "type": "income", "icon": "laptop", "color": "#D433FF", "is_default": True},
-            {"name": "Gifts", "type": "income", "icon": "gift", "color": "#FF33A8", "is_default": True}
-        ]
-
-        for category_data in default_categories:
-            existing = Category.query.filter_by(name=category_data["name"], is_default=True).first()
-            if not existing:
-                category = Category(**category_data)
-                db.session.add(category)
-
-        db.session.commit()
-
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=is_local)
+    app.run(port=5000, debug=True)

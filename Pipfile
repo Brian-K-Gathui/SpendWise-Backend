@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 sqlalchemy-serializer = "*"
 psycopg2-binary = "*"
+gunicorn = "*"
 flask-bcrypt = "*"
 flask-jwt-extended = "*"
 faker = "*"
@@ -28,4 +29,4 @@ flask-limiter = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.12.9"
+python_version = "3.12"
