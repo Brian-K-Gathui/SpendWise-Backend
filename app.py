@@ -19,6 +19,9 @@ from resources.transactionResource import TransactionResource
 from resources.budgetResource import BudgetResource
 from resources.categoryResource import CategoryResource
 from resources.notificationResource import NotificationResource
+from resources.recurring_transaction_resource import RecurringTransactionResource, ProcessRecurringTransactionsResource
+from resources.report_resource import ReportResource
+from resources.shared_wallet_resource import SharedWalletResource
 from sqlalchemy import create_engine
 from sqlalchemy.pool import QueuePool
 from services.supabase_service import SupabaseService
@@ -51,7 +54,6 @@ CORS(app, resources={
         "origins": [
             "http://localhost:5173",  # Local development
             "https://spend-wise-frontend-coral.vercel.app",  # Production frontend
-
         ],
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         "allow_headers": ["Content-Type", "Authorization"],
@@ -168,6 +170,10 @@ api.add_resource(TransactionResource, '/api/transactions', '/api/transactions/<i
 api.add_resource(BudgetResource, '/api/budgets', '/api/budgets/<int:budget_id>')
 api.add_resource(CategoryResource, '/api/categories', '/api/categories/<int:category_id>')
 api.add_resource(NotificationResource, '/api/notifications', '/api/notifications/<int:notification_id>')
+api.add_resource(RecurringTransactionResource, '/api/recurring-transactions', '/api/recurring-transactions/<int:recurring_transaction_id>')
+api.add_resource(ProcessRecurringTransactionsResource, '/api/recurring-transactions/process')
+api.add_resource(ReportResource, '/api/reports', '/api/reports/<int:report_id>')
+api.add_resource(SharedWalletResource, '/api/shared-wallets', '/api/shared-wallets/<int:shared_wallet_id>')
 
 @app.errorhandler(404)
 def not_found(error):

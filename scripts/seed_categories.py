@@ -1,6 +1,7 @@
 import os
 import sys
 import logging
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Add the parent directory to the path so we can import from the app
@@ -9,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Load environment variables
 load_dotenv()
 
+# Import the app and models
 from app import app
 from models import db, Category
 
@@ -19,100 +21,162 @@ logger = logging.getLogger(__name__)
 def seed_categories():
     """Seed default categories"""
     with app.app_context():
-        # Define default categories with icons and colors
+        # Define default categories with emojis and colors
         default_categories = [
+            # Expense categories
             {
                 'name': 'Food & Dining',
+                'type': 'expense',
                 'description': 'Restaurants, groceries, and food delivery',
-                'icon': 'utensils',
-                'color': '#EF4444',  # Red
-                'type': 'income'
+                'icon': '🍔',
+                'color': '#FF5252'
             },
             {
                 'name': 'Transportation',
-                'description': 'Public transit, gas, car maintenance',
-                'icon': 'car',
-                'color': '#F59E0B',  # Amber
-                'type': 'expense'
+                'type': 'expense',
+                'description': 'Gas, public transit, rideshares, and vehicle maintenance',
+                'icon': '🚗',
+                'color': '#448AFF'
             },
             {
                 'name': 'Housing',
-                'description': 'Rent, mortgage, utilities',
-                'icon': 'home',
-                'color': '#10B981',  # Emerald
-                'type': 'expense'
+                'type': 'expense',
+                'description': 'Rent, mortgage, and home repairs',
+                'icon': '🏠',
+                'color': '#7C4DFF'
+            },
+            {
+                'name': 'Utilities',
+                'type': 'expense',
+                'description': 'Electricity, water, internet, and phone bills',
+                'icon': '💡',
+                'color': '#FFD740'
             },
             {
                 'name': 'Entertainment',
-                'description': 'Movies, games, streaming services',
-                'icon': 'film',
-                'color': '#3B82F6',  # Blue
-                'type': 'expense'
+                'type': 'expense',
+                'description': 'Movies, concerts, subscriptions, and hobbies',
+                'icon': '🎬',
+                'color': '#FF6E40'
             },
             {
                 'name': 'Shopping',
-                'description': 'Clothing, electronics, personal items',
-                'icon': 'shopping-bag',
-                'color': '#8B5CF6',  # Violet
-                'type': 'income'
+                'type': 'expense',
+                'description': 'Clothing, electronics, and personal items',
+                'icon': '🛍️',
+                'color': '#EC407A'
             },
             {
-                'name': 'Health',
-                'description': 'Medical expenses, pharmacy, fitness',
-                'icon': 'heart-pulse',
-                'color': '#EC4899',  # Pink
-                'type': 'expense'
+                'name': 'Health & Medical',
+                'type': 'expense',
+                'description': 'Doctor visits, medications, and health insurance',
+                'icon': '🏥',
+                'color': '#26A69A'
             },
             {
                 'name': 'Education',
-                'description': 'Tuition, books, courses',
-                'icon': 'book',
-                'color': '#F97316',  # Orange
-                'type': 'income'
+                'type': 'expense',
+                'description': 'Tuition, books, and courses',
+                'icon': '📚',
+                'color': '#5C6BC0'
             },
             {
                 'name': 'Travel',
-                'description': 'Flights, hotels, vacations',
-                'icon': 'plane',
-                'color': '#06B6D4',  # Cyan
-                'type': 'expense'
+                'type': 'expense',
+                'description': 'Flights, hotels, and vacation expenses',
+                'icon': '✈️',
+                'color': '#00BCD4'
             },
             {
-                'name': 'Income',
-                'description': 'Salary, investments, gifts received',
-                'icon': 'wallet',
-                'color': '#22C55E',  # Green
-                'type': 'income'
-            },
-            {
-                'name': 'Other',
+                'name': 'Other Expenses',
+                'type': 'expense',
                 'description': 'Miscellaneous expenses',
-                'icon': 'more-horizontal',
-                'color': '#6B7280',  # Gray
-                'type': 'expense'
+                'icon': '📝',
+                'color': '#78909C'
+            },
+
+            # Income categories
+            {
+                'name': 'Salary',
+                'type': 'income',
+                'description': 'Regular employment income',
+                'icon': '💰',
+                'color': '#66BB6A'
+            },
+            {
+                'name': 'Freelance',
+                'type': 'income',
+                'description': 'Independent contractor work',
+                'icon': '💻',
+                'color': '#42A5F5'
+            },
+            {
+                'name': 'Investment',
+                'type': 'income',
+                'description': 'Dividends, interest, and capital gains',
+                'icon': '📈',
+                'color': '#26C6DA'
+            },
+            {
+                'name': 'Gift',
+                'type': 'income',
+                'description': 'Money received as gifts',
+                'icon': '🎁',
+                'color': '#AB47BC'
+            },
+            {
+                'name': 'Refund',
+                'type': 'income',
+                'description': 'Returned purchases and tax refunds',
+                'icon': '↩️',
+                'color': '#8D6E63'
+            },
+            {
+                'name': 'Other Income',
+                'type': 'income',
+                'description': 'Miscellaneous income sources',
+                'icon': '📝',
+                'color': '#78909C'
             }
         ]
 
-        # Check if categories already exist
+        # Check for existing categories
         existing_categories = Category.query.all()
-        if existing_categories:
-            logger.info(f"Found {len(existing_categories)} existing categories. Skipping seed.")
-            return
+        existing_count = len(existing_categories)
+
+        if existing_count > 0:
+            logger.info(f"Found {existing_count} existing categories.")
+
+            # Check which categories need to be added
+            existing_names = {(c.name, c.type) for c in existing_categories}
+            categories_to_add = [c for c in default_categories
+                               if (c['name'], c['type']) not in existing_names]
+
+            if not categories_to_add:
+                logger.info("All default categories already exist. Skipping seed.")
+                return
+
+            logger.info(f"Adding {len(categories_to_add)} new categories.")
+            default_categories = categories_to_add
+        else:
+            logger.info("No existing categories found. Creating all defaults.")
 
         # Create categories
         for category_data in default_categories:
             category = Category(
                 name=category_data['name'],
+                type=category_data['type'],
                 description=category_data['description'],
                 icon=category_data['icon'],
                 color=category_data['color'],
-                type=category_data['type']  # Added the required type field
+                created_at=datetime.utcnow()
             )
             db.session.add(category)
+            logger.info(f"Added category: {category_data['name']} ({category_data['type']})")
 
         # Commit changes
         db.session.commit()
-        logger.info(f"Created {len(default_categories)} default categories")
+        logger.info(f"Successfully created {len(default_categories)} categories")
 
 if __name__ == "__main__":
     seed_categories()

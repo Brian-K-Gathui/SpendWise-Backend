@@ -39,7 +39,6 @@ class CategoryResource(Resource):
 
     def post(self):
         try:
-            # Parse the request data
             parser = reqparse.RequestParser()
             parser.add_argument('name', type=str, required=True, help='Category name is required')
             parser.add_argument('description', type=str, required=False)
@@ -89,7 +88,7 @@ class CategoryResource(Resource):
                 name=args['name'],
                 description=args.get('description', ''),
                 icon=args.get('icon', ''),
-                color=args.get('color', '#6366F1')  # Default to indigo
+                color=args.get('color', '#6366F1')
             )
 
             try:

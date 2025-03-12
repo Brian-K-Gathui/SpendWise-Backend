@@ -8,7 +8,6 @@ from sqlalchemy.orm import relationship
 metadata = MetaData()
 db = SQLAlchemy(metadata=metadata)
 
-
 class UserData(db.Model):
     __tablename__ = 'user_data'
 
@@ -30,6 +29,7 @@ class UserData(db.Model):
             'updated_at': self.updated_at,
             'is_active': self.is_active
         }
+
 class User(db.Model, SerializerMixin):
     __tablename__ = 'users'
 
@@ -45,9 +45,14 @@ class User(db.Model, SerializerMixin):
     transactions = relationship("Transaction", back_populates="user", cascade="all, delete-orphan")
     budgets = relationship("Budget", back_populates="user", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
+    recurring_transactions = relationship("RecurringTransaction", back_populates="user", cascade="all, delete-orphan")
+    reports = relationship("Report", back_populates="user", cascade="all, delete-orphan")
+    shared_wallets_owned = relationship("SharedWallet", foreign_keys="SharedWallet.owner_id", back_populates="owner", cascade="all, delete-orphan")
+    shared_wallets_access = relationship("SharedWallet", foreign_keys="SharedWallet.member_id", back_populates="member", cascade="all, delete-orphan")
 
     # Serialization configuration
-    serialize_rules = ('-wallets.user', '-transactions.user', '-budgets.user', '-notifications.user')
+    serialize_rules = ('-wallets.user', '-transactions.user', '-budgets.user', '-notifications.user',
+                       '-recurring_transactions.user', '-reports.user', '-shared_wallets_owned.owner', '-shared_wallets_access.member')
 
     def __init__(self, id, email, full_name=None):
         self.id = id
@@ -81,12 +86,14 @@ class Wallet(db.Model, SerializerMixin):
     user = relationship("User", back_populates="wallets")
     transactions = relationship("Transaction", back_populates="wallet", cascade="all, delete-orphan")
     budgets = relationship("Budget", back_populates="wallet", cascade="all, delete-orphan")
+    recurring_transactions = relationship("RecurringTransaction", back_populates="wallet", cascade="all, delete-orphan")
+    shared_with = relationship("SharedWallet", back_populates="wallet", cascade="all, delete-orphan")
 
     # Serialization configuration
-    serialize_rules = ('-user.wallets', '-transactions.wallet', '-budgets.wallet')
+    serialize_rules = ('-user.wallets', '-transactions.wallet', '-budgets.wallet',
+                       '-recurring_transactions.wallet', '-shared_with.wallet')
 
     def to_dict(self):
-        """Custom to_dict method to avoid recursion issues"""
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -113,12 +120,12 @@ class Category(db.Model, SerializerMixin):
     # Relationships
     transactions = relationship("Transaction", back_populates="category")
     budgets = relationship("Budget", back_populates="category")
+    recurring_transactions = relationship("RecurringTransaction", back_populates="category")
 
     # Serialization configuration
-    serialize_rules = ('-transactions.category', '-budgets.category')
+    serialize_rules = ('-transactions.category', '-budgets.category', '-recurring_transactions.category')
 
     def to_dict(self):
-        """Custom to_dict method to avoid recursion issues"""
         return {
             'id': self.id,
             'name': self.name,
@@ -154,24 +161,8 @@ class Transaction(db.Model, SerializerMixin):
     serialize_rules = ('-user.transactions', '-wallet.transactions', '-category.transactions')
 
     def to_dict(self):
-        """Custom to_dict method to avoid recursion issues"""
-        category_data = None
-        if self.category:
-            category_data = {
-                'id': self.category.id,
-                'name': self.category.name,
-                'type': self.category.type,
-                'icon': self.category.icon,
-                'color': self.category.color
-            }
-
-        wallet_data = None
-        if self.wallet:
-            wallet_data = {
-                'id': self.wallet.id,
-                'name': self.wallet.name,
-                'currency': self.wallet.currency
-            }
+        category_data = self.category.to_dict() if self.category else None
+        wallet_data = self.wallet.to_dict() if self.wallet else None
 
         return {
             'id': self.id,
@@ -213,24 +204,8 @@ class Budget(db.Model, SerializerMixin):
     serialize_rules = ('-user.budgets', '-wallet.budgets', '-category.budgets')
 
     def to_dict(self):
-        """Custom to_dict method to avoid recursion issues"""
-        category_data = None
-        if self.category:
-            category_data = {
-                'id': self.category.id,
-                'name': self.category.name,
-                'type': self.category.type,
-                'icon': self.category.icon,
-                'color': self.category.color
-            }
-
-        wallet_data = None
-        if self.wallet:
-            wallet_data = {
-                'id': self.wallet.id,
-                'name': self.wallet.name,
-                'currency': self.wallet.currency
-            }
+        category_data = self.category.to_dict() if self.category else None
+        wallet_data = self.wallet.to_dict() if self.wallet else None
 
         return {
             'id': self.id,
@@ -265,7 +240,6 @@ class Notification(db.Model, SerializerMixin):
     serialize_rules = ('-user.notifications',)
 
     def to_dict(self):
-        """Custom to_dict method to avoid recursion issues"""
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -274,4 +248,120 @@ class Notification(db.Model, SerializerMixin):
             'type': self.type,
             'is_read': self.is_read,
             'created_at': self.created_at.isoformat() if self.created_at else None
+        }
+
+class RecurringTransaction(db.Model, SerializerMixin):
+    __tablename__ = 'recurring_transactions'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), ForeignKey('users.id'), nullable=False)
+    wallet_id = Column(Integer, ForeignKey('wallets.id'), nullable=False)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
+    amount = Column(Float, nullable=False)
+    type = Column(String(50), nullable=False)  # income, expense
+    description = Column(Text, nullable=True)
+    frequency = Column(String(50), nullable=False)  # daily, weekly, monthly, yearly
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=True)
+    last_processed = Column(DateTime, nullable=True)
+    next_due = Column(DateTime, nullable=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="recurring_transactions")
+    wallet = relationship("Wallet", back_populates="recurring_transactions")
+    category = relationship("Category", back_populates="recurring_transactions")
+
+    # Serialization configuration
+    serialize_rules = ('-user.recurring_transactions', '-wallet.recurring_transactions', '-category.recurring_transactions')
+
+    def to_dict(self):
+        category_data = self.category.to_dict() if self.category else None
+        wallet_data = self.wallet.to_dict() if self.wallet else None
+
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'wallet_id': self.wallet_id,
+            'category_id': self.category_id,
+            'amount': self.amount,
+            'type': self.type,
+            'description': self.description,
+            'frequency': self.frequency,
+            'start_date': self.start_date.isoformat() if self.start_date else None,
+            'end_date': self.end_date.isoformat() if self.end_date else None,
+            'last_processed': self.last_processed.isoformat() if self.last_processed else None,
+            'next_due': self.next_due.isoformat() if self.next_due else None,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'category': category_data,
+            'wallet': wallet_data
+        }
+
+class Report(db.Model, SerializerMixin):
+    __tablename__ = 'reports'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(255), ForeignKey('users.id'), nullable=False)
+    title = Column(String(100), nullable=False)
+    type = Column(String(50), nullable=False)  # expense_summary, income_summary, budget_analysis, etc.
+    parameters = Column(JSON, nullable=True)  # Store report parameters like date range, categories, etc.
+    data = Column(JSON, nullable=True)  # Store the generated report data
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user = relationship("User", back_populates="reports")
+
+    # Serialization configuration
+    serialize_rules = ('-user.reports',)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'title': self.title,
+            'type': self.type,
+            'parameters': self.parameters,
+            'data': self.data,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
+
+class SharedWallet(db.Model, SerializerMixin):
+    __tablename__ = 'shared_wallets'
+
+    id = Column(Integer, primary_key=True)
+    wallet_id = Column(Integer, ForeignKey('wallets.id'), nullable=False)
+    owner_id = Column(String(255), ForeignKey('users.id'), nullable=False)
+    member_id = Column(String(255), ForeignKey('users.id'), nullable=False)
+    permission = Column(String(50), default="viewer")  # owner, editor, viewer
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    wallet = relationship("Wallet", back_populates="shared_with")
+    owner = relationship("User", foreign_keys=[owner_id], back_populates="shared_wallets_owned")
+    member = relationship("User", foreign_keys=[member_id], back_populates="shared_wallets_access")
+
+    # Serialization configuration
+    serialize_rules = ('-wallet.shared_with', '-owner.shared_wallets_owned', '-member.shared_wallets_access')
+
+    def to_dict(self):
+        wallet_data = self.wallet.to_dict() if self.wallet else None
+        member_data = self.member.to_dict() if self.member else None
+
+        return {
+            'id': self.id,
+            'wallet_id': self.wallet_id,
+            'owner_id': self.owner_id,
+            'member_id': self.member_id,
+            'permission': self.permission,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'wallet': wallet_data,
+            'member': member_data
         }

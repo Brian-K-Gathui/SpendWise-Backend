@@ -49,7 +49,6 @@ class NotificationResource(Resource):
 
     def post(self):
         try:
-            # Parse the request data
             parser = reqparse.RequestParser()
             parser.add_argument('title', type=str, required=True, help='Title is required')
             parser.add_argument('message', type=str, required=True, help='Message is required')

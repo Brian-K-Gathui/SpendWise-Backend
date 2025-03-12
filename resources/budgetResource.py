@@ -56,7 +56,6 @@ class BudgetResource(Resource):
 
     def post(self):
         try:
-            # Parse the request data
             parser = reqparse.RequestParser()
             parser.add_argument('wallet_id', type=int, required=True, help='Wallet ID is required')
             parser.add_argument('category_id', type=int, required=True, help='Category ID is required')
@@ -66,12 +65,10 @@ class BudgetResource(Resource):
             parser.add_argument('end_date', type=str, required=False)
             args = parser.parse_args()
 
-            # Get Clerk user ID from the JWT token
             user_id = g.user.get('sub')
             if not user_id:
                 return {"error": "User ID not found in token"}, 400
 
-            # Check if user exists
             user = User.query.get(user_id)
             if not user:
                 return {"error": "User not found"}, 404
