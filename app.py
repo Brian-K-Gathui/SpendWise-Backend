@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, g, request
+from flask import Flask, jsonify, g, request, render_template
 from flask_restful import Api, Resource
 from flask_migrate import Migrate
 from dotenv import load_dotenv
@@ -159,9 +159,10 @@ def handle_error(error):
     response_data = {"error": str(error), "message": "An internal server error occurred"}
     return response_data, 500
 
+
 @app.route('/')
 def home():
-    return {"message": "Welcome to the SpendWise API"}, 200
+    return render_template('index.html')
 
 # Add resources to the API
 api.add_resource(UserResource, '/api/users', '/api/users/<string:user_id>')
